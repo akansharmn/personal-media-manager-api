@@ -18,9 +18,9 @@ namespace MediaManager.API.Models
         [Required]
         public string Url { get; set; }
 
-        
 
-        public string AuthorName { get; set; }
+        public string Username { get; set; }
+        public ParticipantVideoDisplayDTO Author { get; set; }
 
         public TimeSpan Duration { get; set; }
 
@@ -38,6 +38,6 @@ namespace MediaManager.API.Models
 
         public DateTime LastWatchedDate { get; set; }
 
-        public List<string> Participant { get; set; }
+        public List<ParticipantVideoDisplayDTO> VideoParticipants { get; set; }
     }
 }

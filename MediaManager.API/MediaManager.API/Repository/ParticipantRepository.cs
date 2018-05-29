@@ -6,7 +6,7 @@ using MediaManager.DAL.DBEntities;
 
 namespace MediaManager.API.Repository
 {
-    public class ParticipantRepository : IRepository<Participant>
+    public class ParticipantRepository
     {
         private DatabaseContext context;
 
@@ -46,10 +46,11 @@ namespace MediaManager.API.Repository
             return context.Participants.Where(x => x.ParticipantName == participantName).FirstOrDefault();
         }
 
-        public Participant PostEntity(Participant entity)
+        public async Task<Participant> PostEntity(Participant entity)
         {
             var entry = context.Participants.Add(entity);
-            if (entry.State == Microsoft.EntityFrameworkCore.EntityState.Added)
+            await context.SaveChangesAsync();
+           
                 return entry.Entity;
             return null;
         }

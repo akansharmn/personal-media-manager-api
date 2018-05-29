@@ -34,8 +34,8 @@ namespace MediaManager.API
         [Required]
         public string Domain { get; set; }
 
-        
 
-
+        [Required]
+        public string Username { get; set; }
     }
 }

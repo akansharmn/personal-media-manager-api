@@ -6,6 +6,7 @@ using MediaManager.API.Helpers;
 using MediaManager.API.Models;
 using MediaManager.API.Services;
 using MediaManager.DAL.DBEntities;
+using Microsoft.EntityFrameworkCore;
 
 namespace MediaManager.API.Repository
 {
@@ -20,16 +21,19 @@ namespace MediaManager.API.Repository
             this.propertyMappingService = propertyMappingService;
         }
 
-        public bool DeleteEntity(string user)
+        public bool DeleteEntity(string username)
         {
             try
             {
-                var video = context.Users.Where(x => x.Username == user);
-                context.Entry(video).State = Microsoft.EntityFrameworkCore.EntityState.Deleted;
+                var user = context.Users.Where(x => x.Username == username).FirstOrDefault();
+                if (user == null)
+                    return false;
+                context.Users.Remove(user);
+               // context.Entry(user).State = Microsoft.EntityFrameworkCore.EntityState.Deleted;
                 context.SaveChanges();
                 return true;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 return false;
             }
@@ -60,9 +64,9 @@ namespace MediaManager.API.Repository
 
         }
 
-        public User GetEntity(string user, int id = 0)
+        public async Task<User> GetEntity(string user, int id = 0)
         {
-            return context.Users.Where(x => x.Username == user).FirstOrDefault();
+            return await context.Users.Where(x => x.Username == user).FirstOrDefaultAsync();
         }
 
         public async Task<User> PostEntity(User entity)
@@ -100,7 +104,13 @@ namespace MediaManager.API.Repository
         {
             try
             {
-                context.Users.Update(entity);
+                var entry = context.Entry(entity);
+                entry.Property(x => x.Email).IsModified = true;
+                entry.Property(x => x.Name).IsModified = false;
+                entry.Property(x => x.RegistrationDate).IsModified = false;
+                entry.Property(x => x.Username).IsModified = false;
+                entry.State = Microsoft.EntityFrameworkCore.EntityState.Modified;
+               // context.Users.Update(entity);
                 await context.SaveChangesAsync();
                 return entity;
             }

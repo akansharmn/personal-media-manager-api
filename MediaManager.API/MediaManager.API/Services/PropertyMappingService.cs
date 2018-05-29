@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MediaManager.API.Models;
 using MediaManager.DAL.DBEntities;
 
 namespace MediaManager.API.Services
@@ -14,6 +15,13 @@ namespace MediaManager.API.Services
             {"Url", new PropertyMappingValue(new List<string>(){ "Url"}) },
             {"Domain", new PropertyMappingValue(new List<string>(){ "Domain"}) }
 
+        };
+
+        private Dictionary<string, PropertyMappingValue> userPropertyMapping = new Dictionary<string, PropertyMappingValue>(StringComparer.OrdinalIgnoreCase)
+        {
+            {"Username", new PropertyMappingValue(new List<string>(){"Username" }) },
+            {"Email" , new PropertyMappingValue(new List<string>(){"Email"}) },
+            {"Name", new PropertyMappingValue(new List<string>(){"Name" })}
         };
 
         public bool ValidMappingExistsFor<TSource, TDestination>(string fields)
@@ -39,7 +47,9 @@ namespace MediaManager.API.Services
 
         public PropertyMappingService()
         {
+            propertyMappings.Add(new PropertyMapping<VideoForDisplayDTO, Video>(videoPropertyMapping));
             propertyMappings.Add(new PropertyMapping<VideoForCreationDTO, Video>(videoPropertyMapping));
+            propertyMappings.Add(new PropertyMapping<UserForDisplayDTO, User>(userPropertyMapping));
         }
 
         private IList<IPropertyMapping> propertyMappings = new List<IPropertyMapping>();

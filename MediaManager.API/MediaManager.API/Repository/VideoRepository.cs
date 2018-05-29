@@ -15,12 +15,13 @@ namespace MediaManager.API.Repository
     {
         private IPropertyMappingService propertyMappingService;
         private DatabaseContext context;
-
+        private ParticipantRepository participantRepository;
 
        
-        public VideoRepository(DatabaseContext context, IPropertyMappingService propertyMappingService)
+        public VideoRepository(DatabaseContext context, IPropertyMappingService propertyMappingService, ParticipantRepository participantRepository)
         {
             this.propertyMappingService = propertyMappingService;
+            this.participantRepository = participantRepository;
             this.context = context;
         }
         public bool DeleteEntity(Video entity)
@@ -42,7 +43,7 @@ namespace MediaManager.API.Repository
             var collectionBeforePaging = context.Videos.OrderBy(x => x.UploadedDate).AsQueryable();
 
             collectionBeforePaging = context.Videos.ApplySort(parameters.OrderBy, propertyMappingService.GetPropertyMapping<VideoForDisplayDTO, Video>());
-            if(string.IsNullOrEmpty(parameters.Title))
+            if(!string.IsNullOrEmpty(parameters.Title))
             {
                 var filterClause = parameters.Title.Trim().ToLowerInvariant();
                 collectionBeforePaging = collectionBeforePaging.Where(x => x.Title.ToLowerInvariant() == filterClause);
@@ -57,17 +58,41 @@ namespace MediaManager.API.Repository
            // return context.Videos.Where(x => x.Username == user).OrderBy(x => x.UploadedDate).Skip(parameters.PageSize * (parameters.pageNumber - 1)).Take(parameters.PageSize).ToList();
         }
 
-        public Video GetEntity(string user, int id)
+        public Video GetEntity(string user)
         {
             
-            return context.Videos.Where(x => x.VideoId == id && x.Username == user).Include(x => x.VideoParticipants).ThenInclude(y => y.Participant).FirstOrDefault();
+            return context.Videos.Where(x =>  x.Username == user).Include(x => x.VideoParticipants).ThenInclude(y => y.Participant).FirstOrDefault();
         }
 
-        public Video PostEntity(Video entity, List<string> participants)
+        public Video GetEntity(int id)
         {
-            var post = context.Videos.Add(entity);
-            if (post.State != Microsoft.EntityFrameworkCore.EntityState.Added)
-                return null;
+
+            return context.Videos.Where(x => x.VideoId == id).Include(x => x.VideoParticipants).ThenInclude(y => y.Participant).FirstOrDefault();
+        }
+
+        public async Task<Video> PostEntity(Video video, List<string> participants, string domain, string author)
+        {
+            if (!string.IsNullOrEmpty(domain))
+            {
+                video.Domain = MetadataStore.Metadata.Domains.Where(x => x.DomainName == domain).FirstOrDefault();
+
+                if (video.Domain == null)
+                    return null;
+                video.DomainId = video.Domain.DomainId;
+                video.Domain = null;
+            }
+            video.Author = participantRepository.GetEntity(author, 0);
+            if (video.Author == null)
+            {
+                video.Author = await participantRepository.PostEntity(new Participant { ParticipantName = author });
+                if (video.Author == null)
+                    return null;
+            }
+            video.AuthorId = video.Author.ParticipantId;
+            var post = context.Videos.Add(video);
+            await context.SaveChangesAsync();
+            //if (post.State != Microsoft.EntityFrameworkCore.EntityState.Added)
+            //    return null;
 
             if (participants != null)
             {
@@ -76,30 +101,46 @@ namespace MediaManager.API.Repository
                     var entry = context.Participants.Where(x => x.ParticipantName == participant).FirstOrDefault();
                     if (entry == null)
                     {
-                        var result = context.Participants.Add(new Participant { ParticipantName = participant });
-                        if (result.State != EntityState.Added)
-                        {
+                        var result = await participantRepository.PostEntity(new Participant { ParticipantName = participant });
+                        if (result == null)
                             return null;
-                        }
-                        entry = result.Entity;
                     }
                     context.VideoParticipants.Add(new VideoParticipant { VideoId = post.Entity.VideoId, ParticipantId = entry.ParticipantId });
+                    await context.SaveChangesAsync();
                 }
             }
 
             return post.Entity;
         }
 
-        public Video PutEntity(Video entity)
+        public async Task<Video> PutEntity(Video entity, string domain, string author)
         {
             try
             {
-                var entry = context.Entry(entity);
-                entry.State = Microsoft.EntityFrameworkCore.EntityState.Modified;
-                context.SaveChanges();
-                return entry.Entity;
+                if (!string.IsNullOrEmpty(domain))
+                {
+                    entity.DomainId = MetadataStore.Metadata.Domains.Where(x => x.DomainName == domain).Select(x => x.DomainId).FirstOrDefault();
+                    if (entity.DomainId == 0)
+                        return null;
+                }
+
+                entity.Author = participantRepository.GetEntity(author, 0);
+                if (entity.Author == null)
+                {
+                    entity.Author = await participantRepository.PostEntity(new Participant { ParticipantName = author });
+                    if (entity.Author == null)
+                        return null;
+                }
+
+                entity.AuthorId = entity.Author.ParticipantId;
+                //await context.SaveChangesAsync();
+                context.Videos.Update(entity);
+               
+                await context.SaveChangesAsync();
+               
+                return entity;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 return null;
             }

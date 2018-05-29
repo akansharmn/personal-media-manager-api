@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 namespace MediaManager.API.Models
 {
     /// <summary>
-    /// Class containign Links
+    /// Class containing a list of tags
     /// </summary>
-    public abstract class LinkedResourceBasedDTO
+    public class TagsInputDTO
     {
         /// <summary>
-        /// List of links
+        /// list of tags
         /// </summary>
-        public List<LinkDTO> Links { get; set; } = new List<LinkDTO>();
+        public List<String> tags;
     }
 }

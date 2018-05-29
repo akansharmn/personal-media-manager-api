@@ -7,11 +7,21 @@ using System.Threading.Tasks;
 
 namespace MediaManager.API.Helpers
 {
+    /// <summary>
+    /// Extensions on IEnumerable types
+    /// </summary>
     public static class IEnumerableExtensions
     {
+        /// <summary>
+        /// Helps to shape a list of data by providing only the fields asked by user
+        /// </summary>
+        /// <typeparam name="TSource">the type of object contained in IEnumerable</typeparam>
+        /// <param name="source">IEnumerable list</param>
+        /// <param name="fields">fields asked by user</param>
+        /// <returns></returns>
         public static IEnumerable<ExpandoObject> ShapeData<TSource>(this IEnumerable<TSource> source, string fields)
         {
-            if(source == null)
+            if (source == null)
             {
                 throw new ArgumentNullException("source");
             }
@@ -20,7 +30,7 @@ namespace MediaManager.API.Helpers
 
             var propertyInfoList = new List<PropertyInfo>();
 
-            if(string.IsNullOrWhiteSpace(fields))
+            if (string.IsNullOrWhiteSpace(fields))
             {
                 var propertyInfos = typeof(TSource).GetProperties(BindingFlags.Public | BindingFlags.Instance);
                 propertyInfoList.AddRange(propertyInfos);
@@ -30,13 +40,13 @@ namespace MediaManager.API.Helpers
             {
                 var fieldsAfterSplit = fields.Split(',');
 
-                foreach(var field in fieldsAfterSplit)
+                foreach (var field in fieldsAfterSplit)
                 {
                     var property = field.Trim();
 
                     var propertyInfo = typeof(TSource).GetProperty(property, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
 
-                    if(propertyInfo == null)
+                    if (propertyInfo == null)
                     {
                         throw new Exception($"property {property} was not found on {typeof(TSource)}");
 
@@ -45,20 +55,18 @@ namespace MediaManager.API.Helpers
                 }
 
 
-                foreach(TSource sourceObject in source)
+                foreach (TSource sourceObject in source)
                 {
                     var dataShapedObj = new ExpandoObject();
 
-                    foreach(var propertyInfo in propertyInfoList)
+                    foreach (var propertyInfo in propertyInfoList)
                     {
                         var propertyValue = propertyInfo.GetValue(sourceObject);
 
-                    ((IDictionary<string, object>)dataShapedObj).Add(propertyInfo.Name, propertyValue);
+                        ((IDictionary<string, object>)dataShapedObj).Add(propertyInfo.Name, propertyValue);
                     }
                     expandoObjectList.Add(dataShapedObj);
                 }
-                
-
             }
 
             return expandoObjectList;

@@ -7,6 +7,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MediaManager.API.Controllers
 {
+    /// <summary>
+    /// A controller which 
+    /// </summary>
     public class RootController : Controller
     {
         private IUrlHelper urlHelper;

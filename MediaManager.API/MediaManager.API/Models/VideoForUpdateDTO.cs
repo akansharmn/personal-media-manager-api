@@ -7,7 +7,8 @@ namespace MediaManager.API.Controllers
 {
     public class VideoForUpdateDTO
     {
-
+        [Required]
+        public int VideoId { get; set; }
 
         [Required]
         public string Title { get; set; }
@@ -30,6 +31,8 @@ namespace MediaManager.API.Controllers
 
         public string Properties { get; set; }
 
+        [Required]
+        public string Username { get; set; }
 
         [Required]
         public string Domain { get; set; }
